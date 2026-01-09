@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Netflix Clone — Static Single File</title>
+<style>
+  :root{
+    --bg:#0b0b0b;--bg2:#141414;--text:#e5e5e5;--muted:#b3b3b3;--accent:#e50914;--accent-2:#b20710;
+    --card:#181818;--shadow:rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+  }
+  a{color:inherit;text-decoration:none}
+  .container{max-width:1600px;margin:0 auto;padding:0 3vw}
+  /* NAVBAR */
+  .nav{
+    position:fixed;inset:0 0 auto 0;height:64px;display:flex;align-items:center;z-index:50;
+    background:linear-gradient(180deg,rgba(0,0,0,.7),rgba(0,0,0,.3),transparent);
+    transition:background .3s ease;
+  }
+  .nav.solid{background:#000}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.5px}
+  .logo{
+    font-size:28px;line-height:1;color:white;display:inline-block;
+    text-shadow:0 6px 18px rgba(229,9,20,.35);
+  }
+  .logo .n1{color:var(--accent)}
+  .nav-left, .nav-right{display:flex;align-items:center;gap:20px}
+  .nav-left{flex:1}
+  .nav-links a{opacity:.9;font-size:14px}
+  .nav-links a:hover{opacity:1}
+  .search{
+    position:relative;display:flex;align-items:center;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:8px 12px;gap:8px;min-width:220px
+  }
+  .search input{
+    background:transparent;border:0;outline:0;color:#fff;width:160px;font-size:14px;
+  }
+  .btn{
+    background:var(--accent);border:0;color:white;padding:10px 16px;border-radius:4px;font-weight:700;
+    cursor:pointer;transition:filter .2s,transform .05s;box-shadow:0 8px 24px rgba(229,9,20,.35)
+  }
+  .btn:hover{filter:brightness(1.05)}
+  .btn:active{transform:translateY(1px)}
+  .avatar{
+    width:32px;height:32px;border-radius:6px;background:#444;display:inline-grid;place-items:center;font-weight:700
+  }
+  /* HERO */
+  .hero{
+    position:relative;height:70vh;min-height:480px;background:#111;display:grid;align-items:end
+  }
+  .hero-bg{
+    position:absolute;inset:0;background-position:center;background-size:cover;filter:contrast(1.05) saturate(1.1) brightness(.8);
+  }
+  .hero::after{
+    content:"";position:absolute;inset:auto 0 0 0;height:40%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.6),#000)
+  }
+  .hero-content{
+    position:relative;z-index:1;padding-bottom:6vh
+  }
+  .tag{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12px;color:#fff;margin-bottom:8px}
+  .hero h1{margin:.3rem 0 1rem;font-size:clamp(28px,5vw,54px);line-height:1.05}
+  .hero p{max-width:70ch;color:#d8d8d8;margin:0 0 1.2rem;font-size:clamp(14px,2vw,18px)}
+  .hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn.secondary{background:rgba(255,255,255,.18);box-shadow:none}
+  .btn.secondary:hover{background:rgba(255,255,255,.24)}
+  /* ROWS */
+  .row{margin-top:18px}
+  .row h2{
+    margin:18px 0 10px;font-size:clamp(16px,2.4vw,22px);font-weight:800;letter-spacing:.2px
+  }
+  .rail{
+    position:relative
+  }
+  .scroller{
+    display:grid;grid-auto-flow:column;grid-auto-columns:clamp(120px,14vw,220px);
+    gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px;scroll-snap-type:x proximity
+  }
+  .scroller::-webkit-scrollbar{display:none}
+  .card{
+    position:relative;scroll-snap-align:start;border-radius:8px;overflow:hidden;background:#222;cursor:pointer;
+    aspect-ratio:2/3;box-shadow:0 8px 20px rgba(0,0,0,.4);transform-origin:center;transition:transform .2s, box-shadow .2s, filter .2s
+  }
+  .card:hover{transform:scale(1.06);z-index:2;box-shadow:0 16px 40px rgba(0,0,0,.6);filter:brightness(1.05)}
+  .card img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .overlay{
+    position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.9));opacity:0;transition:opacity .2s
+  }
+  .card:hover .overlay{opacity:1}
+  .card .title{
+    position:absolute;left:10px;right:10px;bottom:10px;font-size:13px;font-weight:700;line-height:1.2
+  }
+  .pill{font-size:10px;opacity:.8}
+  .arrow{
+    position:absolute;top:50%;transform:translateY(-50%);height:44px;width:44px;border-radius:999px;border:0;
+    background:rgba(0,0,0,.55);color:white;cursor:pointer;display:grid;place-items:center;z-index:3
+  }
+  .arrow:hover{background:rgba(0,0,0,.75)}
+  .arrow.left{left:-4px}
+  .arrow.right{right:-4px}
+  /* MODAL */
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100
+  }
+  .modal.open{display:flex}
+  .modal-box{
+    width:min(92vw,1000px);background:#000;border:1px solid #222;border-radius:10px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7)
+  }
+  .modal-header{
+    display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#0f0f0f;border-bottom:1px solid #1d1d1d
+  }
+  .modal-title{font-weight:800}
+  .close{background:transparent;border:0;color:#eee;font-size:22px;cursor:pointer}
+  .video-wrap{position:relative;padding-top:56.25%;background:#000}
+  .video-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  /* FOOTER */
+  footer{margin:40px 0 50px;color:var(--muted);font-size:14px}
+  footer .links{display:flex;flex-wrap:wrap;gap:16px;opacity:.8}
+  footer .links a{border-bottom:1px solid transparent}
+  footer .links a:hover{border-bottom-color:currentColor}
+  /* RESPONSIVE */
+  @media (max-width:740px){
+    .nav-links{display:none}
+    .search{min-width:0}
+    .hero{height:62vh}
+  }
+</style>
+</head>
+<body>
+  <!-- NAV -->
+  <div class="nav" id="nav">
+    <div class="container" style="display:flex;align-items:center;gap:18px;">
+      <div class="nav-left">
+        <a class="brand" href="#"><span class="logo"><span class="n1">N</span>ETFLIX</span></a>
+        <div class="nav-links" style="display:flex;gap:16px;margin-left:18px;">
+          <a href="#home">Home</a><a href="#trending">Trending</a><a href="#top">Top Rated</a><a href="#action">Action</a><a href="#scifi">Sci-Fi</a>
+        </div>
+      </div>
+      <div class="nav-right" style="gap:12px;">
+        <div class="search"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.5 13.5l4 4" stroke="#ddd" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9" r="6" stroke="#ddd" stroke-width="2"/></svg>
+          <input id="search" placeholder="Search titles..." />
+        </div>
+        <button class="btn" id="randomPlay">Play Random</button>
+        <span class="avatar">U</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="home" aria-label="featured">
+    <div class="hero-bg" id="heroBg" style="background-image:url('https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=1600&auto=format&fit=crop');"></div>
+    <div class="container hero-content">
+      <span class="tag" id="heroTag">FEATURED</span>
+      <h1 id="heroTitle">Blockbuster Tonight</h1>
+      <p id="heroDesc">Sit back and stream a cinematic adventure. This is a static, one-file Netflix-style UI — no account required.</p>
+      <div class="hero-actions">
+        <button class="btn" id="heroPlay">▶ Play</button>
+        <button class="btn secondary" id="heroInfo">ℹ More Info</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <!-- ROWS RENDERED BY JS -->
+    <div id="rows"></div>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="links">
+        <a href="#">Audio & Subtitles</a>
+        <a href="#">Help Center</a>
+        <a href="#">Jobs</a>
+        <a href="#">Cookie Preferences</a>
+        <a href="#">Legal Notices</a>
+        <a href="#">Privacy</a>
+        <a href="#">Investor Relations</a>
+      </div>
+      <p style="margin-top:12px;">This is a fan-made static UI clone for learning/demo purposes.</p>
+    </footer>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal" id="modal" aria-hidden="true" role="dialog" aria-label="Trailer">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Playing Trailer</div>
+        <button class="close" id="modalClose" aria-label="Close">✕</button>
+      </div>
+      <div class="video-wrap" id="videoWrap">
+        <!-- iframe injected by JS -->
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ----- DATA (YouTube trailers used as posters + playback) -----
+  const LIBRARY = [
+    { id:"8hP9D6kZseM", title:"Inception", tag:"Top 10 Today", genre:"sci-fi", year:2010, hero:true,
+      desc:"A thief who steals corporate secrets through dream-sharing tech gets an impossible task: plant an idea.",
+    },
+    { id:"zSWdZVtXT7E", title:"Interstellar", tag:"Because you watched Sci-Fi", genre:"sci-fi", year:2014 },
+    { id:"EXeTwQWrcwY", title:"The Dark Knight", tag:"Critically Acclaimed", genre:"action", year:2008 },
+    { id:"mqqft2x_Aa4", title:"Dune: Part One", tag:"Epic Worlds", genre:"sci-fi", year:2021 },
+    { id:"uYPbbksJxIg", title:"Oppenheimer", tag:"Award-Winning", genre:"drama", year:2023 },
+    { id:"pHtzpFfY7do", title:"Extraction", tag:"Trending Now", genre:"action", year:2020 },
+    { id:"m3hZ8V1Zf8M", title:"John Wick", tag:"Action", genre:"action", year:2014 },
+    { id:"mnd7sFt5c3A", title:"Stranger Things", tag:"Popular on Netflix", genre:"sci-fi", year:2016 },
+    { id:"oqxAJKy0ii4", title:"Squid Game", tag:"Worldwide Hit", genre:"drama", year:2021 },
+    { id:"pU8-7BX9uxs", title:"Money Heist", tag:"Thriller", genre:"drama", year:2017 },
+    { id:"JfVOs4VSpmA", title:"Spider-Man: No Way Home", tag:"Blockbuster", genre:"action", year:2021 },
+    { id:"eOrNdBpGMv8", title:"The Avengers", tag:"Classics", genre:"action", year:2012 },
+    { id:"2LeOH9AGJQM", title:"Tenet", tag:"Mind-Bender", genre:"sci-fi", year:2020 },
+    { id:"YoHD9XEInc0", title:"Inception (Alt Trailer)", tag:"You Might Like", genre:"sci-fi", year:2010 },
+    { id:"euCqAq6BRa4", title:"The Batman", tag:"Dark & Gritty", genre:"action", year:2022 }
+  ];
+  // Each card uses YouTube thumbnail as poster
+  const poster = id => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+
+  // ----- RENDER ROWS -----
+  const SECTIONS = [
+    { key:"trending", title:"Trending Now", filter: ()=>true },
+    { key:"top", title:"Top Rated Picks", filter: ()=>true },
+    { key:"action", title:"Action Thrillers", filter: m=>m.genre==="action" },
+    { key:"scifi", title:"Sci-Fi & Mind-Benders", filter: m=>m.genre==="sci-fi" },
+    { key:"drama", title:"Drama & Mystery", filter: m=>m.genre==="drama" }
+  ];
+
+  const rowsEl = document.getElementById('rows');
+
+  function makeRow(sectionKey, title, items){
+    const row = document.createElement('section');
+    row.className='row';
+    row.id = sectionKey;
+
+    row.innerHTML = `
+      <h2>${title}</h2>
+      <div class="rail">
+        <button class="arrow left" aria-label="Scroll Left">‹</button>
+        <div class="scroller"></div>
+        <button class="arrow right" aria-label="Scroll Right">›</button>
+      </div>
+    `;
+    const scroller = row.querySelector('.scroller');
+
+    items.forEach(m=>{
+      const card = document.createElement('div');
+      card.className='card';
+      card.setAttribute('data-id', m.id);
+      card.setAttribute('data-title', m.title);
+      card.setAttribute('data-tag', m.tag || '');
+      card.setAttribute('data-desc', m.desc || '');
+      card.innerHTML = `
+        <img loading="lazy" src="${poster(m.id)}" alt="${m.title} poster" />
+        <div class="overlay"></div>
+        <div class="title">
+          <div>${m.title}</div>
+          <div class="pill">${m.tag || ''}</div>
+        </div>
+      `;
+      card.addEventListener('click', ()=> openModal(m));
+      scroller.appendChild(card);
+    });
+
+    const left = row.querySelector('.arrow.left');
+    const right = row.querySelector('.arrow.right');
+    left.addEventListener('click', ()=> scroller.scrollBy({left:-Math.max(400, scroller.clientWidth*0.85), behavior:'smooth'}));
+    right.addEventListener('click',()=> scroller.scrollBy({left: Math.max(400, scroller.clientWidth*0.85), behavior:'smooth'}));
+
+    rowsEl.appendChild(row);
+  }
+
+  // Initial render
+  SECTIONS.forEach(sec=>{
+    const list = LIBRARY.filter(sec.filter);
+    makeRow(sec.key, sec.title, list);
+  });
+
+  // ----- HERO PICK -----
+  const heroPick = LIBRARY.find(m=>m.hero) || LIBRARY[0];
+  const heroBg = document.getElementById('heroBg');
+  const heroTitle = document.getElementById('heroTitle');
+  const heroDesc = document.getElementById('heroDesc');
+  const heroTag = document.getElementById('heroTag');
+  function setHero(m){
+    heroBg.style.backgroundImage = `url(${poster(m.id)})`;
+    heroTitle.textContent = m.title;
+    heroDesc.textContent = m.desc || `${m.title} • ${m.year} • ${m.genre?.toUpperCase() || ""}`;
+    heroTag.textContent = m.tag || "FEATURED";
+    document.getElementById('heroPlay').onclick = ()=> openModal(m);
+    document.getElementById('heroInfo').onclick = ()=> alert(`${m.title}\n\n${m.desc || 'No additional info.'}`);
+  }
+  setHero(heroPick);
+
+  // Change navbar bg on scroll
+  const nav = document.getElementById('nav');
+  addEventListener('scroll', ()=> nav.classList.toggle('solid', scrollY>40), {passive:true});
+
+  // Random play
+  document.getElementById('randomPlay').addEventListener('click', ()=>{
+    const choice = LIBRARY[Math.floor(Math.random()*LIBRARY.length)];
+    openModal(choice);
+  });
+
+  // Search filter
+  const search = document.getElementById('search');
+  search.addEventListener('input', ()=>{
+    const q = search.value.toLowerCase().trim();
+    document.querySelectorAll('.card').forEach(card=>{
+      const text = (card.dataset.title + ' ' + card.dataset.tag).toLowerCase();
+      card.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+
+  // ----- MODAL TRAILER -----
+  const modal = document.getElementById('modal');
+  const modalClose = document.getElementById('modalClose');
+  const videoWrap = document.getElementById('videoWrap');
+  const modalTitle = document.getElementById('modalTitle');
+
+  function openModal(movie){
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    modalTitle.textContent = movie.title + " — Trailer";
+    // autoplay with modest branding
+    const src = `https://www.youtube.com/embed/${movie.id}?autoplay=1&rel=0&modestbranding=1`;
+    videoWrap.innerHTML = `<iframe allow="autoplay; encrypted-media" allowfullscreen src="${src}" title="${movie.title} trailer"></iframe>`;
+  }
+  function closeModal(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    videoWrap.innerHTML = ""; // stop video
+  }
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+  addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modal.classList.contains('open')) closeModal(); });
+
+  // Optional: keyboard scroll for last hovered rail
+  let lastRail;
+  document.querySelectorAll('.rail .scroller').forEach(sc=>{
+    sc.addEventListener('mouseenter',()=> lastRail=sc);
+  });
+  addEventListener('keydown', e=>{
+    if(!lastRail) return;
+    if(e.key==='ArrowRight'){ lastRail.scrollBy({left:300,behavior:'smooth'}); }
+    if(e.key==='ArrowLeft'){ lastRail.scrollBy({left:-300,behavior:'smooth'}); }
+  });
+</script>
+</body>
+</html>
