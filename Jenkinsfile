@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     AWS_REGION = "ap-south-1"
-    ECR_REPO = "ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/prod-nginx"
+    ECR_REPO = "331760067638.dkr.ecr.ap-south-1.amazonaws.com/prod-nginx"
     IMAGE_TAG = "v${BUILD_NUMBER}"
   }
 
@@ -11,7 +11,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        git url: 'https://github.com/your-org/nginx-ci-repo.git', branch: 'main'
+        git url: 'https://github.com/bk-thakur/nginx-ci-repo.git', branch: 'main'
       }
     }
 
@@ -35,7 +35,7 @@ pipeline {
     stage('Update GitOps Repo') {
       steps {
         sh '''
-        git clone https://github.com/your-org/nginx-cd-repo.git
+        git clone https://github.com/bk-thakur/nginx-cd-repo.git
         cd nginx-cd-repo/prod
         sed -i "s|IMAGE_TAG|$ECR_REPO:$IMAGE_TAG|" deployment.yaml
         git commit -am "Release $IMAGE_TAG"
